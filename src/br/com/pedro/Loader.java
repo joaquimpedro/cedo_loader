@@ -1,8 +1,11 @@
 package br.com.pedro;
 
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,42 +18,39 @@ import br.com.pedro.model.layouts.BarCode;
 import br.com.pedro.model.layouts.Detail;
 import br.com.pedro.model.layouts.Header;
 import br.com.pedro.model.layouts.Trailler;
-import br.com.pedro.util.FileUtils;
 
 public class Loader {
 
 	private String line;
 	private Header header;
 	private Trailler trailler;
+	private int actual_line = 0;
 
-	public List<Cedo> load(File file) throws Exception {
+	public List<Cedo> load(InputStream fileInputStream) throws Exception {
 
 		List<Cedo> cedos = new ArrayList<Cedo>();
 		List<Detail> details = new ArrayList<Detail>();
+		ByteArrayOutputStream baos = cloneInputStream(fileInputStream);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
 		try {
-			BufferedReader reader = FileUtils.readFileWithUtf8Encoding(file);
 
-			validations(file);
+			validations(new ByteArrayInputStream(baos.toByteArray()));
 
 			line = reader.readLine();
 			while (line != null) {
-				try {
-					Detail detail = null;
-					Object obj = importer();
+				actual_line++;
+				Detail detail = null;
+				Object obj = importer();
 
-					if (isDetail()) {
-						detail = (Detail) obj;
-					} else if (isHeader()) {
-						header = (Header) obj;
-					} else if (isTrailler()) {
-						trailler = (Trailler) obj;
-					}
-
-					if (detail != null)
-						details.add(detail);
-				} catch (ColumnException e) {
-					e.printStackTrace();
+				if (isDetail()) {
+					detail = (Detail) obj;
+				} else if (isHeader()) {
+					header = (Header) obj;
+				} else {
+					trailler = (Trailler) obj;
 				}
+				if (detail != null)
+					details.add(detail);
 				line = reader.readLine();
 			}
 
@@ -60,14 +60,28 @@ public class Loader {
 
 		} catch (Exception e) {
 			throw e;
+		} finally {
+			fileInputStream.close();
+			reader.close();
 		}
 		return cedos;
 	}
 
-	private void validations(File file) throws IOException, ColumnException, HeaderException, DetailException, TraillerException {
-		BufferedReader reader = FileUtils.readFileWithUtf8Encoding(file);
-		String errorMessage = "";
+	private ByteArrayOutputStream cloneInputStream(InputStream fileInputStream) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] buffer = new byte[1024];
+		int len;
+		while ((len = fileInputStream.read(buffer)) > -1) {
+			baos.write(buffer, 0, len);
+		}
+		baos.flush();
+		return baos;
+	}
+
+	private void validations(InputStream fileInputStream) throws IOException, ColumnException, HeaderException, DetailException, TraillerException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream));
 		line = reader.readLine();
+		String errorMessage = "";
 
 		boolean header = false;
 		boolean detail = false;
@@ -111,6 +125,9 @@ public class Loader {
 			throw new IllegalStateException("Arquivo corrompido!" + errorMessage);
 
 		line = null;
+
+		fileInputStream.close();
+		reader.close();
 	}
 
 	private Object importer() throws ColumnException {
@@ -163,7 +180,7 @@ public class Loader {
 		try {
 			return line.substring(start, end);
 		} catch (Exception e) {
-			throw new ColumnException("Invalid Column '" + columnName + "'.");
+			throw new ColumnException("Invalid Column at line: " + actual_line + "; '" + columnName + "'.");
 		}
 	}
 

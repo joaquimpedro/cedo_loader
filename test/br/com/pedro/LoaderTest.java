@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
 
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class LoaderTest {
 		File file = new File("test/resources/layout.txt");
 		List<Cedo> cedos;
 		try {
-			cedos = loader.load(file);
+			cedos = loader.load(new FileInputStream(file));
 
 			assertNotNull(cedos);
 			assertEquals("numero de itens", 3, cedos.size());
@@ -65,7 +66,7 @@ public class LoaderTest {
 	public void deveriaImportarArquivoSemHeaderEDarErro() {
 		File file = new File("test/resources/layout_sem_header.txt");
 		try {
-			loader.load(file);
+			loader.load(new FileInputStream(file));
 		} catch (HeaderException e) {
 			assertEquals("Menssagem de erro", e.getMessage(), "Arquivo corrompido!" + ERROR_HEADER);
 		} catch (Exception e) {
@@ -77,7 +78,7 @@ public class LoaderTest {
 	public void deveriaImportarArquivoSemDetailEDarErro() {
 		File file = new File("test/resources/layout_sem_detail.txt");
 		try {
-			loader.load(file);
+			loader.load(new FileInputStream(file));
 		} catch (DetailException e) {
 			assertEquals("Menssagem de erro", e.getMessage(), "Arquivo corrompido!" + ERROR_DETAIL);
 		} catch (Exception e) {
@@ -89,21 +90,9 @@ public class LoaderTest {
 	public void deveriaImportarArquivoSemTraillerEDarErro() {
 		File file = new File("test/resources/layout_sem_trailler.txt");
 		try {
-			loader.load(file);
+			loader.load(new FileInputStream(file));
 		} catch (TraillerException e) {
 			assertEquals("Menssagem de erro", e.getMessage(), "Arquivo corrompido!" + ERROR_TRAILLER);
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void deveriaDarErroAoImportarArquivoInexistente() {
-		File file = new File("naoexiste.txt");
-		try {
-			loader.load(file);
-		} catch (IllegalStateException e) {
-			assertEquals("File not found", "Arquivo não existe ou não tem permissão de leitura.", e.getMessage());
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
@@ -113,7 +102,7 @@ public class LoaderTest {
 	public void deveriaDarErroAoLerArquivoComHeaderTrailerInvalido() {
 		File file = new File("test/resources/layout_header_trailler_invalido.txt");
 		try {
-			loader.load(file);
+			loader.load(new FileInputStream(file));
 		} catch (IllegalStateException e) {
 			assertEquals("Layout do arquivo", "Arquivo corrompido! Header não possui tamanho 13; Trailler não possui tamanho 12;", e.getMessage());
 			throw e;
@@ -123,22 +112,21 @@ public class LoaderTest {
 	}
 
 	@Test
-	public void deveriaContinuarImportacaoMesmoCom1DetailInvalido() {
+	public void deveriaPararImportacaoCom1DetailInvalido() {
 		File file = new File("test/resources/layout_detail_invalido.txt");
 		try {
-			List<Cedo> cedos = loader.load(file);
-			assertEquals("quantidade de cedo", 2, cedos.size());
+			loader.load(new FileInputStream(file));
 		} catch (Exception e) {
-			fail(e.getMessage());
+			assertEquals("Invalid Column", "Invalid Column at line: 2; 'Bar Code - Code of control client'.", e.getMessage());
 		}
 
 	}
-	
+
 	@Test
 	public void deveriaDarErroAoLerArquivosComQuantidadeDeItensIncorreto() {
 		File file = new File("test/resources/layout_qnt_linhas_incorreta.txt");
 		try {
-			loader.load(file);
+			loader.load(new FileInputStream(file));
 		} catch (Exception e) {
 			assertEquals("quantidade de linhas", "Arquivo corrompido!" + ERROR_QNT_LINHAS, e.getMessage());
 		}
