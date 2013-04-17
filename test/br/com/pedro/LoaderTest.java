@@ -1,6 +1,8 @@
 package br.com.pedro;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.List;
@@ -59,7 +61,7 @@ public class LoaderTest {
 		}
 	}
 
-	@Test(expected = HeaderException.class)
+	@Test
 	public void deveriaImportarArquivoSemHeaderEDarErro() {
 		File file = new File("test/resources/layout_sem_header.txt");
 		try {
@@ -71,7 +73,7 @@ public class LoaderTest {
 		}
 	}
 
-	@Test(expected = DetailException.class)
+	@Test
 	public void deveriaImportarArquivoSemDetailEDarErro() {
 		File file = new File("test/resources/layout_sem_detail.txt");
 		try {
@@ -83,7 +85,7 @@ public class LoaderTest {
 		}
 	}
 
-	@Test(expected = TraillerException.class)
+	@Test
 	public void deveriaImportarArquivoSemTraillerEDarErro() {
 		File file = new File("test/resources/layout_sem_trailler.txt");
 		try {
@@ -95,14 +97,13 @@ public class LoaderTest {
 		}
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test
 	public void deveriaDarErroAoImportarArquivoInexistente() {
 		File file = new File("naoexiste.txt");
 		try {
 			loader.load(file);
 		} catch (IllegalStateException e) {
 			assertEquals("File not found", "Arquivo não existe ou não tem permissão de leitura.", e.getMessage());
-			throw e;
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
@@ -131,5 +132,15 @@ public class LoaderTest {
 			fail(e.getMessage());
 		}
 
+	}
+	
+	@Test
+	public void deveriaDarErroAoLerArquivosComQuantidadeDeItensIncorreto() {
+		File file = new File("test/resources/layout_qnt_linhas_incorreta.txt");
+		try {
+			loader.load(file);
+		} catch (Exception e) {
+			assertEquals("quantidade de linhas", "Arquivo corrompido!" + ERROR_QNT_LINHAS, e.getMessage());
+		}
 	}
 }

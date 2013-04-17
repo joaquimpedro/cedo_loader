@@ -50,9 +50,8 @@ public class Loader {
 						details.add(detail);
 				} catch (ColumnException e) {
 					e.printStackTrace();
-				} finally {
-					line = reader.readLine();
 				}
+				line = reader.readLine();
 			}
 
 			for (Detail detail : details) {
@@ -115,23 +114,19 @@ public class Loader {
 	}
 
 	private Object importer() throws ColumnException {
-
-		if (isHeader()) {
+		if (isHeader())
 			return getHeader();
-		} else if (isDetail()) {
+		else if (isDetail())
 			return getDetail();
-		} else if (isTrailler()) {
+		else
 			return getTrailler();
-		}
-
-		throw new IllegalStateException("Arquivo não possui Header, Detail ou Trailler");
 	}
 
 	private Object getTrailler() throws ColumnException {
 		return new Trailler(getRecordType(2), getNumberOfRecords());
 	}
 
-	private Object getDetail()  throws ColumnException {
+	private Object getDetail() throws ColumnException {
 		return new Detail(getRecordType(1), getBarCode(), getReturnCode());
 	}
 
